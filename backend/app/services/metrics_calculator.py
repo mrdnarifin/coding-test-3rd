@@ -22,15 +22,18 @@ class MetricsCalculator:
         total_distributions = self.calculate_total_distributions(fund_id)
         dpi = self.calculate_dpi(fund_id)
         irr = self.calculate_irr(fund_id)
+        tvpi = self.calculate_tvpi(fund_id)
+        rvpi = self.calculate_rvpi(fund_id)
+        nav = self.get_fund_nav(fund_id)
         
         return {
             "pic": float(pic) if pic else 0,
             "total_distributions": float(total_distributions) if total_distributions else 0,
             "dpi": float(dpi) if dpi else 0,
             "irr": float(irr) if irr else 0,
-            "tvpi": None,  # To be implemented
-            "rvpi": None,  # To be implemented
-            "nav": None,   # To be implemented
+            "tvpi": float(tvpi) if tvpi else 0,
+            "rvpi": float(rvpi) if rvpi else 0,
+            "nav": float(nav) if nav else 0,
         }
     
     def calculate_pic(self, fund_id: int) -> Optional[Decimal]:
@@ -51,7 +54,7 @@ class MetricsCalculator:
         ).filter(
             Adjustment.fund_id == fund_id
         ).scalar() or Decimal(0)
-        
+
         pic = total_calls - total_adjustments
         return pic if pic > 0 else Decimal(0)
     
@@ -96,7 +99,7 @@ class MetricsCalculator:
             
             # Calculate IRR (returns as decimal, e.g., 0.15 for 15%)
             irr = npf.irr(amounts)
-            
+
             if irr is None or np.isnan(irr) or np.isinf(irr):
                 return None
             
@@ -275,3 +278,46 @@ class MetricsCalculator:
             }
         
         return {"error": "Unknown metric"}
+    
+    def get_fund_nav(self, fund_id: int) -> Decimal:
+        total_capital_calls = self.db.query(func.sum(CapitalCall.amount)) \
+            .filter(CapitalCall.fund_id == fund_id) \
+            .scalar() or Decimal(0)
+        
+        total_distributions = self.db.query(func.sum(Distribution.amount)) \
+            .filter(Distribution.fund_id == fund_id) \
+            .scalar() or Decimal(0)
+        
+        total_adjustments = self.db.query(func.sum(Adjustment.amount)) \
+            .filter(Adjustment.fund_id == fund_id) \
+            .scalar() or Decimal(0)
+        
+        nav = total_capital_calls - total_distributions + total_adjustments
+        return nav
+    
+    def calculate_tvpi(self, fund_id: int) -> float:
+        pic = self.calculate_pic(fund_id)
+        
+        total_distributions = self.db.query(
+            func.sum(Distribution.amount)
+        ).filter(
+            Distribution.fund_id == fund_id
+        ).scalar() or Decimal(0)
+        
+        nav = self.get_fund_nav(fund_id)
+        
+        if not pic or pic == 0:
+            return 0.0
+        
+        tvpi = float(total_distributions + nav) / float(pic)
+        return round(tvpi, 4)
+    
+    def calculate_rvpi(self, fund_id: int) -> float:
+        pic = self.calculate_pic(fund_id)
+        nav = self.get_fund_nav(fund_id)
+        
+        if not pic or pic == 0:
+            return 0.0
+        
+        rvpi = float(nav) / float(pic)
+        return round(rvpi, 4)

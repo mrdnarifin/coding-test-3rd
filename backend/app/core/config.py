@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4-turbo-preview"
     OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
+    NVIDIA_API_KEY: str = ""
+    NVIDIA_MODEL: str = ""
     
     # Anthropic (optional)
     ANTHROPIC_API_KEY: str = ""

@@ -4,8 +4,8 @@ Query engine service for RAG-based question answering
 from typing import Dict, Any, List, Optional
 import time
 from langchain_openai import ChatOpenAI
-from langchain_community.llms import Ollama
 from langchain.prompts import ChatPromptTemplate
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
 from app.core.config import settings
 from app.services.vector_store import VectorStore
 from app.services.metrics_calculator import MetricsCalculator
@@ -31,7 +31,14 @@ class QueryEngine:
             )
         else:
             # Fallback to local LLM
-            return Ollama(model="llama2")
+            model = ChatNVIDIA(
+                model="meta/llama-3.3-70b-instruct",
+                api_key=settings.NVIDIA_API_KEY,
+                temperature=0.2,
+                top_p=0.7,
+                max_tokens=1024,
+            )
+            return model
     
     async def process_query(
         self, 
@@ -51,10 +58,9 @@ class QueryEngine:
             Response with answer, sources, and metrics
         """
         start_time = time.time()
-        
+        fund_id = 10
         # Step 1: Classify query intent
         intent = await self._classify_intent(query)
-        
         # Step 2: Retrieve relevant context from vector store
         filter_metadata = {"fund_id": fund_id} if fund_id else None
         relevant_docs = await self.vector_store.similarity_search(
@@ -67,7 +73,7 @@ class QueryEngine:
         metrics = None
         if intent == "calculation" and fund_id:
             metrics = self.metrics_calculator.calculate_all_metrics(fund_id)
-        
+
         # Step 4: Generate response using LLM
         answer = await self._generate_response(
             query=query,

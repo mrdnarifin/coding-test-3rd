@@ -12,10 +12,10 @@ import numpy as np
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from app.core.config import settings
 from app.db.session import SessionLocal
-
+import json
 
 class VectorStore:
     """pgvector-based vector store for document embeddings"""
@@ -88,22 +88,26 @@ class VectorStore:
         try:
             # Generate embedding
             embedding = await self._get_embedding(content)
-            embedding_list = embedding.tolist()
+            embedding_list = embedding.tolist()  # List of floats
             
-            # Insert into database
+            # Convert metadata to JSON string
+            metadata_json = json.dumps(metadata)
+            
+            # Insert using plain text SQL without cast
             insert_sql = text("""
                 INSERT INTO document_embeddings (document_id, fund_id, content, embedding, metadata)
-                VALUES (:document_id, :fund_id, :content, :embedding::vector, :metadata::jsonb)
+                VALUES (:document_id, :fund_id, :content, :embedding, :metadata)
             """)
             
             self.db.execute(insert_sql, {
                 "document_id": metadata.get("document_id"),
                 "fund_id": metadata.get("fund_id"),
                 "content": content,
-                "embedding": str(embedding_list),
-                "metadata": str(metadata)
+                "embedding": embedding_list,  # just pass list
+                "metadata": metadata_json      # JSON string
             })
             self.db.commit()
+            
         except Exception as e:
             print(f"Error adding document: {e}")
             self.db.rollback()
@@ -118,12 +122,6 @@ class VectorStore:
         """
         Search for similar documents using cosine similarity
         
-        TODO: Implement this method
-        - Generate query embedding
-        - Use pgvector's <=> operator for cosine distance
-        - Apply metadata filters if provided
-        - Return top k results
-        
         Args:
             query: Search query
             k: Number of results to return
@@ -135,7 +133,10 @@ class VectorStore:
         try:
             # Generate query embedding
             query_embedding = await self._get_embedding(query)
-            embedding_list = query_embedding.tolist()
+            embedding_list = query_embedding.tolist()  # Convert numpy array to list
+            
+            # Convert embedding list to a PostgreSQL-friendly format (e.g., a string that PostgreSQL can cast as a vector)
+            embedding_str = "[" + ",".join(map(str, embedding_list)) + "]"
             
             # Build query with optional filters
             where_clause = ""
@@ -155,18 +156,21 @@ class VectorStore:
                     fund_id,
                     content,
                     metadata,
-                    1 - (embedding <=> :query_embedding::vector) as similarity_score
+                    1 - (embedding <=> CAST(:query_embedding AS vector)) as similarity_score
                 FROM document_embeddings
                 {where_clause}
-                ORDER BY embedding <=> :query_embedding::vector
+                ORDER BY embedding <=> CAST(:query_embedding AS vector)
                 LIMIT :k
             """)
             
+            # Execute query with proper parameter binding
             result = self.db.execute(search_sql, {
-                "query_embedding": str(embedding_list),
+                "query_embedding": embedding_str,
                 "k": k
             })
-            
+
+            print(result)
+
             # Format results
             results = []
             for row in result:
@@ -178,7 +182,6 @@ class VectorStore:
                     "metadata": row[4],
                     "score": float(row[5])
                 })
-            
             return results
         except Exception as e:
             print(f"Error in similarity search: {e}")

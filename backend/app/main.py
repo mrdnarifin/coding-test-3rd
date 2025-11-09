@@ -1,10 +1,15 @@
-"""
-FastAPI main application entry point
-"""
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.endpoints import documents, funds, chat, metrics
+from app.db.init_db import init_db
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: initialize database
+    init_db()
+    yield
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -12,6 +17,7 @@ app = FastAPI(
     description="Fund Performance Analysis System API",
     docs_url="/docs",
     redoc_url="/redoc",
+    # lifespan=lifespan
 )
 
 # CORS middleware
@@ -29,18 +35,14 @@ app.include_router(funds.router, prefix="/api/funds", tags=["funds"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(metrics.router, prefix="/api/metrics", tags=["metrics"])
 
-
 @app.get("/")
 async def root():
-    """Root endpoint"""
     return {
         "message": "Fund Performance Analysis System API",
         "version": settings.VERSION,
         "docs": "/docs",
     }
 
-
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
     return {"status": "healthy"}

@@ -1,9 +1,9 @@
 """
 Fund database model
 """
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, BigInteger
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from app.db.base import Base
 
 
@@ -17,7 +17,8 @@ class Fund(Base):
     gp_name = Column(String(255))
     fund_type = Column(String(100))
     vintage_year = Column(Integer)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    fund_size = Column(BigInteger)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationships
     capital_calls = relationship("CapitalCall", back_populates="fund")
