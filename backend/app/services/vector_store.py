@@ -76,7 +76,7 @@ class VectorStore:
             print(f"Error ensuring pgvector extension: {e}")
             self.db.rollback()
     
-    async def add_document(self, content: str, metadata: Dict[str, Any]):
+    def add_document(self, content: str, metadata: Dict[str, Any]):
         """
         Add a document to the vector store
         
@@ -87,9 +87,9 @@ class VectorStore:
         """
         try:
             # Generate embedding
-            embedding = await self._get_embedding(content)
+            embedding = self._get_embedding(content)
             embedding_list = embedding.tolist()  # List of floats
-            
+
             # Convert metadata to JSON string
             metadata_json = json.dumps(metadata)
             
@@ -113,7 +113,7 @@ class VectorStore:
             self.db.rollback()
             raise
     
-    async def similarity_search(
+    def similarity_search(
         self, 
         query: str, 
         k: int = 5, 
@@ -132,12 +132,12 @@ class VectorStore:
         """
         try:
             # Generate query embedding
-            query_embedding = await self._get_embedding(query)
+            query_embedding = self._get_embedding(query)
             embedding_list = query_embedding.tolist()  # Convert numpy array to list
             
             # Convert embedding list to a PostgreSQL-friendly format (e.g., a string that PostgreSQL can cast as a vector)
             embedding_str = "[" + ",".join(map(str, embedding_list)) + "]"
-            
+
             # Build query with optional filters
             where_clause = ""
             if filter_metadata:
@@ -156,20 +156,17 @@ class VectorStore:
                     fund_id,
                     content,
                     metadata,
-                    1 - (embedding <=> CAST(:query_embedding AS vector)) as similarity_score
+                    1 - (embedding <-> CAST(:query_embedding AS vector)) as similarity_score
                 FROM document_embeddings
                 {where_clause}
-                ORDER BY embedding <=> CAST(:query_embedding AS vector)
+                ORDER BY embedding <-> CAST(:query_embedding AS vector)
                 LIMIT :k
             """)
-            
             # Execute query with proper parameter binding
             result = self.db.execute(search_sql, {
                 "query_embedding": embedding_str,
                 "k": k
             })
-
-            print(result)
 
             # Format results
             results = []
@@ -187,7 +184,7 @@ class VectorStore:
             print(f"Error in similarity search: {e}")
             return []
     
-    async def _get_embedding(self, text: str) -> np.ndarray:
+    def _get_embedding(self, text: str) -> np.ndarray:
         """Generate embedding for text"""
         if hasattr(self.embeddings, 'embed_query'):
             embedding = self.embeddings.embed_query(text)

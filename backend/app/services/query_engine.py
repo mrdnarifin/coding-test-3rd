@@ -32,7 +32,7 @@ class QueryEngine:
         else:
             # Fallback to local LLM
             model = ChatNVIDIA(
-                model="meta/llama-3.3-70b-instruct",
+                model=settings.NVIDIA_MODEL,
                 api_key=settings.NVIDIA_API_KEY,
                 temperature=0.2,
                 top_p=0.7,
@@ -58,17 +58,17 @@ class QueryEngine:
             Response with answer, sources, and metrics
         """
         start_time = time.time()
-        fund_id = 10
+
         # Step 1: Classify query intent
         intent = await self._classify_intent(query)
         # Step 2: Retrieve relevant context from vector store
         filter_metadata = {"fund_id": fund_id} if fund_id else None
-        relevant_docs = await self.vector_store.similarity_search(
+        relevant_docs = self.vector_store.similarity_search(
             query=query,
             k=settings.TOP_K_RESULTS,
             filter_metadata=filter_metadata
         )
-        
+
         # Step 3: Calculate metrics if needed
         metrics = None
         if intent == "calculation" and fund_id:
@@ -81,7 +81,7 @@ class QueryEngine:
             metrics=metrics,
             conversation_history=conversation_history or []
         )
-        
+
         processing_time = time.time() - start_time
         
         return {

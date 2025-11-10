@@ -1,6 +1,4 @@
-"""
-Document API endpoints
-"""
+# app/api/document.py
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
@@ -14,15 +12,14 @@ from app.schemas.document import (
     DocumentUploadResponse,
     DocumentStatus
 )
-from app.services.document_processor import DocumentProcessor
 from app.core.config import settings
+from app.tasks.document_processing import process_document_task
 
 router = APIRouter()
 
-
 @router.post("/upload", response_model=DocumentUploadResponse)
 async def upload_document(
-    background_tasks: BackgroundTasks,
+    # background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     fund_id: int = None,
     db: Session = Depends(get_db)
@@ -55,7 +52,7 @@ async def upload_document(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
-    # Create document record
+    # Create document record in DB
     document = Document(
         fund_id=fund_id,
         file_name=file.filename,
@@ -66,52 +63,15 @@ async def upload_document(
     db.commit()
     db.refresh(document)
     
-    # Start background processing
-    background_tasks.add_task(
-        process_document_task,
-        document.id,
-        file_path,
-        fund_id or 1  # Default fund_id if not provided
-    )
-    
+    # Start background task to process the document
+    # background_tasks.add_task(process_document_task, document.id, file_path, fund_id or 1)
+    task_id = process_document_task.delay(document.id, file_path, fund_id or 1)
     return DocumentUploadResponse(
         document_id=document.id,
-        task_id=None,
+        task_id=str(task_id),
         status="pending",
         message="Document uploaded successfully. Processing started."
     )
-
-
-async def process_document_task(document_id: int, file_path: str, fund_id: int):
-    """Background task to process document"""
-    from app.db.session import SessionLocal
-    
-    db = SessionLocal()
-    
-    try:
-        # Update status to processing
-        document = db.query(Document).filter(Document.id == document_id).first()
-        document.parsing_status = "processing"
-        db.commit()
-        
-        # Process document
-        processor = DocumentProcessor(db)
-        result = await processor.process_document(file_path, document_id, fund_id)
-        
-        # Update status
-        document.parsing_status = result["status"]
-        if result["status"] == "failed":
-            document.error_message = result.get("error")
-        db.commit()
-        
-    except Exception as e:
-        document = db.query(Document).filter(Document.id == document_id).first()
-        document.parsing_status = "failed"
-        document.error_message = str(e)
-        db.commit()
-    finally:
-        db.close()
-
 
 @router.get("/{document_id}/status", response_model=DocumentStatus)
 async def get_document_status(document_id: int, db: Session = Depends(get_db)):
@@ -127,7 +87,6 @@ async def get_document_status(document_id: int, db: Session = Depends(get_db)):
         error_message=document.error_message
     )
 
-
 @router.get("/{document_id}", response_model=DocumentSchema)
 async def get_document(document_id: int, db: Session = Depends(get_db)):
     """Get document details"""
@@ -137,7 +96,6 @@ async def get_document(document_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Document not found")
     
     return document
-
 
 @router.get("/", response_model=List[DocumentSchema])
 async def list_documents(
@@ -154,7 +112,6 @@ async def list_documents(
     
     documents = query.offset(skip).limit(limit).all()
     return documents
-
 
 @router.delete("/{document_id}")
 async def delete_document(document_id: int, db: Session = Depends(get_db)):

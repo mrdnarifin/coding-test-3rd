@@ -63,8 +63,6 @@ async def get_fund(fund_id: int, db: Session = Depends(get_db)):
     calculator = MetricsCalculator(db)
     metrics = calculator.calculate_all_metrics(fund_id)
 
-    print(metrics)
-    
     fund_dict = FundSchema.model_validate(fund).model_dump()
     fund_dict["metrics"] = FundMetrics(**metrics)
     

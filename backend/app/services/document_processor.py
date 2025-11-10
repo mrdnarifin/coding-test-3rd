@@ -45,7 +45,7 @@ class DocumentProcessor:
             format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)}
         )
 
-    async def process_document(self, file_path: str, document_id: int, fund_id: int = None) -> Dict[str, Any]:
+    def process_document(self, file_path: str, document_id: int, fund_id: int = None) -> Dict[str, Any]:
         """
         Process a PDF document
         
@@ -166,7 +166,7 @@ class DocumentProcessor:
             if all_texts:
                 chunks = self._chunk_text(all_texts)
                 for chunk in chunks:
-                    await self.vector_store.add_document(
+                    self.vector_store.add_document(
                         content=chunk["text"],
                         metadata={
                             "document_id": document_id,

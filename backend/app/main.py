@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.endpoints import documents, funds, chat, metrics
 from app.db.init_db import init_db
+import uvicorn
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -17,7 +18,7 @@ app = FastAPI(
     description="Fund Performance Analysis System API",
     docs_url="/docs",
     redoc_url="/redoc",
-    # lifespan=lifespan
+    lifespan=lifespan
 )
 
 # CORS middleware
@@ -46,3 +47,6 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
