@@ -62,15 +62,15 @@ services:
 
   celery:
     build:
-      context: /app
+      context: ./backend
       dockerfile: Dockerfile.celery
     command: celery -A celery worker -l info
     volumes:
-      - /app:/app
+      - ./backend:/app
     depends_on:
       - backend
     env_file:
-      - /app/.env
+      - ./backend/.env
     image: celery:latest
     extra_hosts:
       - "host.docker.internal:host-gateway"
