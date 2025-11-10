@@ -35,7 +35,7 @@ class VectorStore:
         else:
             # Fallback to local embeddings
             return HuggingFaceEmbeddings(
-                model_name="sentence-transformers/all-MiniLM-L6-v2"
+                model_name=settings.HG_EMBEDDING_MODEL
             )
     
     def _ensure_extension(self):

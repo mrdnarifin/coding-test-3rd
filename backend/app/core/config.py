@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
     NVIDIA_API_KEY: str = ""
     NVIDIA_MODEL: str = ""
-    
+    HG_EMBEDDING_MODEL: str = ""
     # Anthropic (optional)
     ANTHROPIC_API_KEY: str = ""
     
