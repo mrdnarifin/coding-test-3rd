@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   postgres:
@@ -45,6 +45,8 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4-turbo-preview}
       - OPENAI_EMBEDDING_MODEL=${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY}
+      - NVIDIA_MODEL=${NVIDIA_MODEL}
       - UPLOAD_DIR=/app/uploads
     volumes:
       - ./backend:/app
@@ -59,6 +61,21 @@ services:
         python app/db/init_db.py &&
         uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
       "
+
+  celery:
+    build:
+      context: /app
+      dockerfile: Dockerfile.celery
+    command: celery -A celery worker -l info
+    volumes:
+      - /app:/app
+    depends_on:
+      - backend
+    env_file:
+      - /app/.env
+    image: celery:latest
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   frontend:
     build:

@@ -1,0 +1,25 @@
+FROM python:3.13.8-slim
+
+# Set work directory
+ENV APP_HOME=/app
+WORKDIR $APP_HOME
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=True
+
+# Install system dependencies including git
+RUN apt-get update && \
+    apt-get install -y git && \
+    apt-get install -y iputils-ping && \
+    apt-get clean
+
+# Salin requirements dan instal dependencies
+COPY requirements.txt /app
+RUN pip install -r requirements.txt
+
+# Salin sisa file project
+COPY . /app
+
+# Jalankan Celery worker
+CMD ["celery", "-A", "celery", "worker", "--loglevel=info"]
