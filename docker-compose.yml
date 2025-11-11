@@ -48,6 +48,7 @@ services:
       - UPLOAD_DIR=/app/uploads
     volumes:
       - ./backend:/app
+      - ./backend/.env:/app/.env
       - backend_uploads:/app/uploads
     depends_on:
       postgres:
@@ -68,10 +69,9 @@ services:
     command: celery -A celery worker -l info
     volumes:
       - ./backend:/app
+      - ./backend/.env:/app/.env
     depends_on:
       - backend
-    env_file:
-      - ./backend/.env
     image: celery:latest
     extra_hosts:
       - "host.docker.internal:host-gateway"
