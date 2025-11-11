@@ -66,13 +66,15 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.celery
-    command: celery -A celery worker -l info
+    command: celery -A app.celery.celery_app worker -l info
     volumes:
       - ./backend:/app
       - ./backend/.env:/app/.env
     depends_on:
       - backend
-    image: celery:latest
+      - redis
+    environment:
+      - REDIS_URL=redis://redis:6379/0
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
