@@ -69,6 +69,7 @@ services:
     volumes:
       - ./backend:/app
       - ./backend/.env:/app/.env
+      - backend_uploads:/app/uploads
     depends_on:
       - backend
       - redis
