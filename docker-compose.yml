@@ -61,7 +61,7 @@ services:
       "
 
   celery:
-    container_name: fund-celery
+    container_name: fund-worker
     build:
       context: ./backend
       dockerfile: Dockerfile.celery
