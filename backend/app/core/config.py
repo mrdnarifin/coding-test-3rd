@@ -23,10 +23,10 @@ class Settings(BaseSettings):
     ]
     
     # Database
-    DATABASE_URL: str = "postgresql://funduser:fundpass@localhost:5432/funddb"
+    DATABASE_URL: str = "postgresql://funduser:fundpass@postgres:5432/funddb"
     
     # Redis
-    REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_URL: str = "redis://redis:6379/0"
     
     # OpenAI
     OPENAI_API_KEY: str = ""
