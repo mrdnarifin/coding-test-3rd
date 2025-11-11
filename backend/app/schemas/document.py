@@ -1,7 +1,7 @@
 """
 Document Pydantic schemas
 """
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional
 
@@ -31,8 +31,9 @@ class Document(DocumentBase):
     parsing_status: str
     error_message: Optional[str] = None
     
-    class Config:
-        from_attributes = True
+    model_config: ConfigDict = {
+        "from_attributes": True 
+    }
 
 
 class DocumentStatus(BaseModel):

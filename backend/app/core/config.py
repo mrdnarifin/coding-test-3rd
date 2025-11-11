@@ -3,6 +3,7 @@ Application configuration
 """
 from pydantic_settings import BaseSettings
 from typing import List
+from pydantic import ConfigDict
 
 
 class Settings(BaseSettings):
@@ -59,9 +60,12 @@ class Settings(BaseSettings):
     TOP_K_RESULTS: int = 5
     SIMILARITY_THRESHOLD: float = 0.7
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config: ConfigDict = {
+        "env_file": ".env",
+        "case_sensitive": True,
+    }
 
 
 settings = Settings()
+
+print(settings.DATABASE_URL)

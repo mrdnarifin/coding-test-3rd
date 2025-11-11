@@ -14,7 +14,7 @@ router = APIRouter()
 @router.get("/funds/{fund_id}/metrics")
 async def get_fund_metrics(
     fund_id: int,
-    metric: str = Query(None, regex="^(dpi|irr|tvpi|rvpi|pic|all)$"),
+    metric: str = Query(None, pattern="^(dpi|irr|tvpi|rvpi|nav|pic|all)$"),
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
@@ -22,7 +22,7 @@ async def get_fund_metrics(
     
     Args:
         fund_id: Fund ID
-        metric: Specific metric to calculate (dpi, irr, pic, or all)
+        metric: Specific metric to calculate (dpi, irr, tvpi, rvpi, nav, pic, or all)
     """
     # Verify fund exists
     fund = db.query(Fund).filter(Fund.id == fund_id).first()
@@ -34,6 +34,11 @@ async def get_fund_metrics(
     if not metric or metric == "all":
         # Return all metrics
         metrics = calculator.calculate_all_metrics(fund_id)
+        # Add tvpi, rvpi, and nav to the metrics if they're not already included
+        metrics['tvpi'] = calculator.calculate_tvpi(fund_id)
+        metrics['rvpi'] = calculator.calculate_rvpi(fund_id)
+        metrics['nav'] = calculator.get_fund_nav(fund_id)
+        
         return {
             "fund_id": fund_id,
             "fund_name": fund.name,
@@ -50,6 +55,15 @@ async def get_fund_metrics(
         elif metric == "pic":
             value = calculator.calculate_pic(fund_id)
             breakdown = calculator.get_calculation_breakdown(fund_id, "pic")
+        elif metric == "tvpi":
+            value = calculator.calculate_tvpi(fund_id)
+            breakdown = calculator.get_calculation_breakdown(fund_id, "tvpi")
+        elif metric == "rvpi":
+            value = calculator.calculate_rvpi(fund_id)
+            breakdown = calculator.get_calculation_breakdown(fund_id, "rvpi")
+        elif metric == "nav":
+            value = calculator.get_fund_nav(fund_id)
+            breakdown = None  # NAV usually doesn't require a breakdown
         else:
             raise HTTPException(status_code=400, detail="Unsupported metric")
         

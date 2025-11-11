@@ -36,7 +36,7 @@ class QueryEngine:
                 api_key=settings.NVIDIA_API_KEY,
                 temperature=0.2,
                 top_p=0.7,
-                max_tokens=1024,
+                max_completion_tokens=1024,
             )
             return model
     
@@ -110,21 +110,21 @@ class QueryEngine:
         """
         query_lower = query.lower()
         
-        # Calculation keywords
-        calc_keywords = [
-            "calculate", "what is the", "current", "dpi", "irr", "tvpi", 
-            "rvpi", "pic", "paid-in capital", "return", "performance"
-        ]
-        if any(keyword in query_lower for keyword in calc_keywords):
-            return "calculation"
-        
-        # Definition keywords
+        # Definition keywords (more specific to defining terms)
         def_keywords = [
             "what does", "mean", "define", "explain", "definition", 
             "what is a", "what are"
         ]
         if any(keyword in query_lower for keyword in def_keywords):
             return "definition"
+        
+        # Calculation keywords (only if the definition wasn't matched)
+        calc_keywords = [
+            "calculate", "what is the", "current", "dpi", "irr", "tvpi", 
+            "rvpi", "pic", "paid-in capital", "return", "performance"
+        ]
+        if any(keyword in query_lower for keyword in calc_keywords):
+            return "calculation"
         
         # Retrieval keywords
         ret_keywords = [
@@ -135,6 +135,8 @@ class QueryEngine:
             return "retrieval"
         
         return "general"
+
+
     
     async def _generate_response(
         self,

@@ -1,9 +1,23 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.endpoints import documents, funds, chat, metrics
-from app.db.init_db import init_db
 import uvicorn
+import logging
+
+# Set up logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
+# Dependency to log each request
+def log_request(request: dict = Depends()):
+    logger.info(f"Handling request: {request}")
+    return logger
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -29,7 +43,8 @@ app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(metrics.router, prefix="/api/metrics", tags=["metrics"])
 
 @app.get("/")
-async def root():
+async def root(logger: logging.Logger = Depends(log_request)):
+    logger.info("Root endpoint hit.")
     return {
         "message": "Fund Performance Analysis System API",
         "version": settings.VERSION,
@@ -37,7 +52,8 @@ async def root():
     }
 
 @app.get("/health")
-async def health_check():
+async def health_check(logger: logging.Logger = Depends(log_request)):
+    logger.info("Health check endpoint hit.")
     return {"status": "healthy"}
 
 if __name__ == "__main__":

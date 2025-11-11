@@ -3,7 +3,7 @@ Transaction database models (Capital Calls, Distributions, Adjustments)
 """
 from sqlalchemy import Column, Integer, String, Date, Numeric, Boolean, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from app.db.base import Base
 
 
@@ -18,7 +18,7 @@ class CapitalCall(Base):
     call_type = Column(String(100))
     amount = Column(Numeric(15, 2), nullable=False)
     description = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
     
     # Relationships
     fund = relationship("Fund", back_populates="capital_calls")
@@ -36,7 +36,7 @@ class Distribution(Base):
     is_recallable = Column(Boolean, default=False)
     amount = Column(Numeric(15, 2), nullable=False)
     description = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
     
     # Relationships
     fund = relationship("Fund", back_populates="distributions")
@@ -55,7 +55,7 @@ class Adjustment(Base):
     amount = Column(Numeric(15, 2), nullable=False)
     is_contribution_adjustment = Column(Boolean, default=False)
     description = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
     
     # Relationships
     fund = relationship("Fund", back_populates="adjustments")
