@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
@@ -6,19 +5,12 @@ from app.api.endpoints import documents, funds, chat, metrics
 from app.db.init_db import init_db
 import uvicorn
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup: initialize database
-    init_db()
-    yield
-
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     description="Fund Performance Analysis System API",
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan
 )
 
 # CORS middleware
