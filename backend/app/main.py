@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.endpoints import documents, funds, chat, metrics
@@ -15,10 +15,10 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 # Dependency to log each request
-def log_request(request: dict = Depends()):
-    logger.info(f"Handling request: {request}")
+def log_request(request: Request):
+    logger = logging.getLogger("api_logger")
+    logger.info(f"Request URL: {request.url.path}")
     return logger
-
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
