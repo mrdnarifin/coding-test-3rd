@@ -37,21 +37,21 @@ docling-parse==4.7.1
 # LLM & LangChain
 # =======================================
 langchain==0.3.7
-langchain-core
-langchain-text-splitters
-langchain-huggingface
-langchain-postgres
-langchain-openai
-langchain-nvidia-ai-endpoints
-langsmith
-sentence-transformers
-transformers
-torch
-torchvision
-tokenizers
-huggingface-hub
-accelerate
-safetensors
+langchain-core==0.3.63
+langchain-huggingface==0.2.0
+langchain-nvidia-ai-endpoints==0.3.19
+langchain-openai==0.3.19
+langchain-postgres==0.0.16
+langchain-text-splitters==0.3.8
+langsmith==0.1.147
+sentence-transformers==5.1.2
+transformers==4.57.1
+tokenizers==0.22.1
+torch==2.9.0+cpu
+torchvision==0.24.0+cpu
+huggingface-hub==0.36.0
+accelerate==1.11.0
+safetensors==0.6.2
 
 # =======================================
 # Document Processing
